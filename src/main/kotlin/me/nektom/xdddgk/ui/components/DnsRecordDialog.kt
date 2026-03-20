@@ -24,14 +24,9 @@ fun DnsRecordDialog(
     var type by remember { mutableStateOf(initial?.type ?: "A") }
     var name by remember { mutableStateOf(initial?.name ?: "") }
 
-    // Запоминаем исходный тип JSON при открытии диалога (задача 13)
-    val originalJsonType = remember(initial) {
-        if (initial?.type == "TXT") detectJsonType(initial.content) else JsonContentType.None
-    }
     var content by remember(initial) {
         mutableStateOf(
-            if (initial?.type == "TXT" && originalJsonType != JsonContentType.None) {
-                // Распаковываем для редактирования: escaped → inner pretty JSON, raw → pretty JSON
+            if (initial?.type == "TXT" && detectJsonType(initial.content) != JsonContentType.None) {
                 try { unwrapForEditing(initial.content) } catch (_: Exception) { initial.content }
             } else {
                 initial?.content ?: ""
@@ -117,15 +112,17 @@ fun DnsRecordDialog(
                                     color = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.weight(1f)
                                 )
-                            } else if (originalJsonType == JsonContentType.Escaped) {
-                                Text(
-                                    "Stored as escaped JSON string",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.outline,
-                                    modifier = Modifier.weight(1f)
-                                )
                             } else {
-                                Spacer(Modifier.weight(1f))
+                                if (detectJsonType(content) != JsonContentType.None) {
+                                    Text(
+                                        "Stored as escaped JSON string",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                } else {
+                                    Spacer(Modifier.weight(1f))
+                                }
                             }
 
                             val looksLikeJson = content.trim().let { it.startsWith("{") || it.startsWith("[") }
@@ -184,8 +181,9 @@ fun DnsRecordDialog(
             Button(
                 onClick = {
                     // Задача 14: перепаковываем в исходный формат при сохранении
-                    val finalContent = if (isTxt && detectJsonType(content) != JsonContentType.None) {
-                        try { rewrapForSaving(content, originalJsonType) } catch (_: Exception) { content.trim() }
+                    val detectedType = if (isTxt) detectJsonType(content) else JsonContentType.None
+                    val finalContent = if (detectedType != JsonContentType.None) {
+                        try { rewrapForSaving(content, JsonContentType.Escaped) } catch (_: Exception) { content.trim() }
                     } else {
                         content.trim()
                     }
