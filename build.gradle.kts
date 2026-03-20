@@ -49,6 +49,12 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Cloudflare DNS Editor"
             packageVersion = "1.0.0"
+            modules(
+                "java.naming",       // Ktor CIO — DNS resolution
+                "java.net.http",     // HTTP client internals
+                "jdk.crypto.ec",     // TLS — EC ciphers (HTTPS)
+                "jdk.crypto.cryptoki" // TLS — PKCS#11
+            )
         }
     }
 }
